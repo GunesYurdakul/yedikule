@@ -167,6 +167,7 @@ class _YedikuleMapState extends State<YedikuleMap> {
   }
 
   _checkIfClose() {
+    stepText = null;
     markers.forEach((Marker marker) {
       if (currentLocation != null) {
         var distance = Geolocator.distanceBetween(
