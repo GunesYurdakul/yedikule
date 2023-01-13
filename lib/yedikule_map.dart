@@ -5,6 +5,9 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:yedikule/game.dart';
+import 'package:yedikule/question.dart';
+import 'package:yedikule/scratcher_game.dart';
 
 class YedikuleMap extends StatefulWidget {
   final Completer<GoogleMapController> controller;
@@ -18,6 +21,8 @@ class YedikuleMap extends StatefulWidget {
 class _YedikuleMapState extends State<YedikuleMap> {
   Set<Polyline> polylines = <Polyline>{};
   String? stepText;
+  int step = 0;
+  GameSettings? gameToStart;
   static const CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(40.993057, 28.923205),
     zoom: 18,
@@ -47,18 +52,53 @@ class _YedikuleMapState extends State<YedikuleMap> {
     28.92217867076397,
   );
   late List<Marker> markers;
+  Map<String, GameSettings?> settings = {
+    'Golden Gate': GameSettings(
+      [
+        QuestionAnswer(
+            "Yedikule altınkapı hangi tarihsel dönemde yapılmıştır?",
+            [
+              "Osmanlı dönemi",
+              "Bizans dönemi",
+            ],
+            1)
+      ],
+      [
+        "lib/assets/golden_gate/1.jpeg",
+        "lib/assets/golden_gate/2.jpeg",
+      ],
+    )
+  };
 
   @override
   void initState() {
     getPolyPoints();
     getCurrentLocation();
     markers = [
-      buildMarker('Golden Gate', goldenGate),
-      buildMarker('Hazine Kulesi', hazineKulesi),
-      buildMarker('Dungeon Tower', dungeonTower),
-      buildMarker('South Tower', southTower),
-      buildMarker('Small Tower', smallTower),
-      buildMarker('Tower of 3rd Ahmet', towerOf3rdAhmet),
+      buildMarker(
+        'Golden Gate',
+        goldenGate,
+      ),
+      buildMarker(
+        'Hazine Kulesi',
+        hazineKulesi,
+      ),
+      buildMarker(
+        'Dungeon Tower',
+        dungeonTower,
+      ),
+      buildMarker(
+        'South Tower',
+        southTower,
+      ),
+      buildMarker(
+        'Small Tower',
+        smallTower,
+      ),
+      buildMarker(
+        'Tower of 3rd Ahmet',
+        towerOf3rdAhmet,
+      ),
     ];
     super.initState();
   }
@@ -96,7 +136,7 @@ class _YedikuleMapState extends State<YedikuleMap> {
             print(details);
           },
         ),
-        if (stepText != null)
+        if (step == 1)
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
@@ -106,7 +146,7 @@ class _YedikuleMapState extends State<YedikuleMap> {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  color: Colors.orange.withAlpha(120),
+                  color: Colors.orange.withAlpha(200),
                 ),
                 width: MediaQuery.of(context).size.width * 0.75,
                 height: 80,
@@ -118,6 +158,63 @@ class _YedikuleMapState extends State<YedikuleMap> {
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
+                ),
+              ),
+            ),
+          )
+        else if (step == 2)
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.orange.withAlpha(200),
+                ),
+                width: MediaQuery.of(context).size.width * 0.75,
+                height: 135,
+                child: Column(
+                  children: [
+                    Text(
+                      stepText!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 15,
+                    ),
+                    if (gameToStart != null)
+                      TextButton(
+                        style: ButtonStyle(
+                          backgroundColor:
+                              MaterialStateProperty.all(Colors.white),
+                          foregroundColor:
+                              MaterialStateProperty.all(Colors.black),
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => Game(
+                                settings: gameToStart!,
+                                onCompleted: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          "Start discovering!",
+                        ),
+                      )
+                  ],
                 ),
               ),
             ),
@@ -167,7 +264,7 @@ class _YedikuleMapState extends State<YedikuleMap> {
   }
 
   _checkIfClose() {
-    stepText = null;
+//    stepText = null;
     markers.forEach((Marker marker) {
       if (currentLocation != null) {
         var distance = Geolocator.distanceBetween(
@@ -176,9 +273,11 @@ class _YedikuleMapState extends State<YedikuleMap> {
           marker.position.latitude,
           marker.position.longitude,
         );
-        if (distance < 8) {
+        if (distance < 20) {
           setState(() {
-            stepText = "You have arrived to ${marker.markerId.value}";
+            stepText = "You arrived to the ${marker.markerId.value}";
+            gameToStart = settings[marker.markerId.value];
+            step = 2;
           });
         }
       }
@@ -236,12 +335,14 @@ class _YedikuleMapState extends State<YedikuleMap> {
                       ),
                     */
                     ElevatedButton(
-                        child: Text('Go to $id'),
-                        onPressed: () {
-                          stepText = 'Follow the directions!';
-                          Navigator.pop(context);
-                          _drawPath(position);
-                        }),
+                      child: Text('Go to $id'),
+                      onPressed: () {
+                        stepText = 'Follow the directions!';
+                        step = 1;
+                        Navigator.pop(context);
+                        _drawPath(position);
+                      },
+                    ),
                   ],
                 ),
               ),
