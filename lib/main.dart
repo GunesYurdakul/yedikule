@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:yedikule/start.dart';
 import 'package:yedikule/yedikule_map.dart';
 import 'dart:async';
 
@@ -31,30 +32,10 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  void _openStaticMap() {
-    setState(() {});
-  }
-
-  final Completer<GoogleMapController> _controller =
-      Completer<GoogleMapController>();
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-          title: InkWell(
-        onTap: () {
-          setState(() {});
-        },
-        child: Row(children: const [
-          Text('Time Travel: Yedikule'),
-          Icon(Icons.location_pin)
-        ]),
-      )),
-      body: Center(
-          child: YedikuleMap(
-        controller: _controller,
-      )),
+      body: const Center(child: Start()),
     );
   }
 }

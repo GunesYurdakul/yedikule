@@ -22,9 +22,11 @@ class _YedikuleMapState extends State<YedikuleMap> {
   Set<Polyline> polylines = <Polyline>{};
   String? stepText;
   int step = 0;
+  String? currentStepId;
   GameSettings? gameToStart;
+  bool testMode = false;
   static const CameraPosition _kGooglePlex = CameraPosition(
-    target: LatLng(40.993057, 28.923205),
+    target: LatLng(40.9929, 28.923205),
     zoom: 18,
   );
   static const LatLng goldenGate = LatLng(
@@ -51,23 +53,95 @@ class _YedikuleMapState extends State<YedikuleMap> {
     40.99363410815218,
     28.92217867076397,
   );
+  static const LatLng yedikule = LatLng(
+    40.9932,
+    28.9231,
+  );
   late List<Marker> markers;
   Map<String, GameSettings?> settings = {
-    'Golden Gate': GameSettings(
-      [
-        QuestionAnswer(
-            "Yedikule altınkapı hangi tarihsel dönemde yapılmıştır?",
+    'Golden Gate': GameSettings('Golden Gate', [
+      GameStep(
+        question: QuestionAnswer(
+            "Yedikule Altınkapı hangi tarihsel dönemde yapılmıştır?",
             [
               "Osmanlı dönemi",
               "Bizans dönemi",
             ],
-            1)
-      ],
+            1),
+      ),
+      GameStep(
+        imagePaths: [
+          "lib/assets/golden_gate/1.jpg",
+          "lib/assets/golden_gate/2.png",
+        ],
+      ),
+    ]),
+    'Hazine Kulesi': GameSettings('Hazine Kulesi', [
+      GameStep(
+        question: QuestionAnswer(
+            "Hazine Kulesi hangi dönemde yapılmıştır?",
+            [
+              "Bizans dönemi",
+              "Osmanlı dönemi",
+            ],
+            1),
+      ),
+      GameStep(
+        imagePaths: [
+          "lib/assets/hazine_kulesi/1.jpg",
+          "lib/assets/hazine_kulesi/2.jpg",
+        ],
+      ),
+    ]),
+    /**
+     * Fatih Sultan Mehmet yapıya kaç kule ekletmiştir (eklemiştir) ve Yedikule ismini almıştır?
+        4
+        3
+        2
+      Geçmiş dönemlerde yapıdaki kulelerin üstü hangi çatı türüyle kapatılmıştır?
+        Soğan
+        Konik / Külah
+        Tonoz
+     */
+    'Yedikule': GameSettings(
+      'Yedikule',
       [
-        "lib/assets/golden_gate/1.jpeg",
-        "lib/assets/golden_gate/2.jpeg",
+        GameStep(
+          question: QuestionAnswer(
+            "Fatih Sultan Mehmet yapıya kaç kule ekletmiştir ve Yedikule ismini almıştır?",
+            [
+              "3",
+              "4",
+              "2",
+            ],
+            0,
+          ),
+        ),
+        GameStep(
+          imagePaths: [
+            "lib/assets/axo/1.jpeg",
+            "lib/assets/axo/2.jpg",
+          ],
+        ),
+        GameStep(
+          question: QuestionAnswer(
+            "Geçmiş dönemlerde yapıdaki kulelerin üstü hangi çatı türüyle kapatılmıştır?",
+            [
+              "Soğan",
+              "Tonoz",
+              "Konik / Külah",
+            ],
+            2,
+          ),
+        ),
+        GameStep(
+          imagePaths: [
+            "lib/assets/axo/3.jpg",
+            "lib/assets/axo/4.JPG",
+          ],
+        ),
       ],
-    )
+    ),
   };
 
   @override
@@ -78,10 +152,12 @@ class _YedikuleMapState extends State<YedikuleMap> {
       buildMarker(
         'Golden Gate',
         goldenGate,
+        active: true,
       ),
       buildMarker(
         'Hazine Kulesi',
         hazineKulesi,
+        active: true,
       ),
       buildMarker(
         'Dungeon Tower',
@@ -99,6 +175,11 @@ class _YedikuleMapState extends State<YedikuleMap> {
         'Tower of 3rd Ahmet',
         towerOf3rdAhmet,
       ),
+      buildMarker(
+        'Yedikule',
+        yedikule,
+        active: true,
+      ),
     ];
     super.initState();
   }
@@ -111,115 +192,139 @@ class _YedikuleMapState extends State<YedikuleMap> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        GoogleMap(
-          mapType: MapType.hybrid,
-          initialCameraPosition: _kGooglePlex,
-          onMapCreated: (GoogleMapController controller) {
-            widget.controller.complete(controller);
-          },
-          markers: ([
-                    if (currentLocation != null)
-                      Marker(
-                        markerId: const MarkerId("currentLocation"),
-                        icon: BitmapDescriptor.defaultMarkerWithHue(
-                            BitmapDescriptor.hueAzure),
-                        position: LatLng(currentLocation!.latitude!,
-                            currentLocation!.longitude!),
-                      ),
-                  ] +
-                  markers)
-              .toSet(),
-          polylines: polylines,
-          onTap: (details) {
-            print(details);
-          },
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Time Travel: Yedikule'),
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  testMode = !testMode;
+                });
+              },
+              icon: Icon(
+                testMode ? Icons.stop_circle : Icons.play_circle_fill,
+                size: 30,
+              ),
+            )
+          ],
         ),
-        if (step == 1)
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Container(
-                padding: const EdgeInsets.all(5),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: Colors.orange.withAlpha(200),
-                ),
-                width: MediaQuery.of(context).size.width * 0.75,
-                height: 80,
-                child: Text(
-                  stepText!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+      ),
+      body: Stack(
+        children: [
+          GoogleMap(
+            mapType: MapType.hybrid,
+            initialCameraPosition: _kGooglePlex,
+            onMapCreated: (GoogleMapController controller) {
+              widget.controller.complete(controller);
+            },
+            markers: ([
+                      if (currentLocation != null)
+                        Marker(
+                          markerId: const MarkerId("currentLocation"),
+                          icon: BitmapDescriptor.defaultMarkerWithHue(
+                              BitmapDescriptor.hueAzure),
+                          position: LatLng(currentLocation!.latitude!,
+                              currentLocation!.longitude!),
+                        ),
+                    ] +
+                    markers)
+                .toSet(),
+            polylines: polylines,
+            onTap: (details) {
+              print(details);
+            },
+          ),
+          if (step == 1)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: Colors.lime.withAlpha(200),
+                  ),
+                  width: MediaQuery.of(context).size.width * 0.75,
+                  height: 100,
+                  child: Text(
+                    stepText!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
-          )
-        else if (step == 2)
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: Colors.orange.withAlpha(200),
-                ),
-                width: MediaQuery.of(context).size.width * 0.75,
-                height: 135,
-                child: Column(
-                  children: [
-                    Text(
-                      stepText!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+            )
+          else if (step == 2)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: Colors.lime.withAlpha(200),
+                  ),
+                  width: MediaQuery.of(context).size.width * 0.75,
+                  height: 160,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        stepText!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    const SizedBox(
-                      height: 15,
-                    ),
-                    if (gameToStart != null)
-                      TextButton(
-                        style: ButtonStyle(
-                          backgroundColor:
-                              MaterialStateProperty.all(Colors.white),
-                          foregroundColor:
-                              MaterialStateProperty.all(Colors.black),
-                        ),
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => Game(
-                                settings: gameToStart!,
-                                onCompleted: () {
-                                  Navigator.of(context).pop();
-                                },
+                      const SizedBox(
+                        height: 15,
+                      ),
+                      if (gameToStart != null)
+                        TextButton(
+                          style: ButtonStyle(
+                            backgroundColor:
+                                MaterialStateProperty.all(Colors.white),
+                            foregroundColor:
+                                MaterialStateProperty.all(Colors.black),
+                          ),
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => Game(
+                                  settings: gameToStart!,
+                                  onCompleted: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
                               ),
+                            );
+                          },
+                          child: const Text(
+                            "Start discovering!",
+                            style: TextStyle(
+                              fontSize: 18,
                             ),
-                          );
-                        },
-                        child: const Text(
-                          "Start discovering!",
-                        ),
-                      )
-                  ],
+                          ),
+                        )
+                    ],
+                  ),
                 ),
               ),
-            ),
-          )
-      ],
+            )
+        ],
+      ),
     );
   }
 
@@ -273,7 +378,7 @@ class _YedikuleMapState extends State<YedikuleMap> {
           marker.position.latitude,
           marker.position.longitude,
         );
-        if (distance < 20) {
+        if (distance < 20 && marker.markerId.value == currentStepId) {
           setState(() {
             stepText = "You arrived to the ${marker.markerId.value}";
             gameToStart = settings[marker.markerId.value];
@@ -298,7 +403,7 @@ class _YedikuleMapState extends State<YedikuleMap> {
               ),
               locationToGo
             ],
-            color: const Color(0xFF7B61FF),
+            color: Color.fromARGB(255, 25, 190, 219),
             width: 6,
           ),
         );
@@ -306,10 +411,12 @@ class _YedikuleMapState extends State<YedikuleMap> {
     );
   }
 
-  buildMarker(String id, LatLng position) {
+  buildMarker(String id, LatLng position, {bool active = false}) {
     return Marker(
       markerId: MarkerId(id),
       position: position,
+      icon: BitmapDescriptor.defaultMarkerWithHue(
+          active ? BitmapDescriptor.hueRed : BitmapDescriptor.hueOrange),
       onTap: () {
         showModalBottomSheet<void>(
           context: context,
@@ -317,7 +424,6 @@ class _YedikuleMapState extends State<YedikuleMap> {
             return Container(
               height: 100,
               padding: const EdgeInsets.all(10),
-              color: Colors.amber,
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -325,7 +431,10 @@ class _YedikuleMapState extends State<YedikuleMap> {
                   children: <Widget>[
                     Text(
                       id,
-                      style: const TextStyle(fontSize: 20),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     /*                     
                       ADD DESCRIPTION  MAYBE
@@ -335,10 +444,22 @@ class _YedikuleMapState extends State<YedikuleMap> {
                       ),
                     */
                     ElevatedButton(
-                      child: Text('Go to $id'),
+                      child: Text(
+                        'Go to $id',
+                        style: const TextStyle(
+                          fontSize: 18,
+                        ),
+                      ),
                       onPressed: () {
-                        stepText = 'Follow the directions!';
-                        step = 1;
+                        if (testMode) {
+                          stepText = "You arrived to the $id";
+                          gameToStart = settings[id];
+                          step = 2;
+                        } else {
+                          stepText = 'Follow the directions!';
+                          step = 1;
+                        }
+                        currentStepId = id;
                         Navigator.pop(context);
                         _drawPath(position);
                       },

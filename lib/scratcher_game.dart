@@ -1,14 +1,14 @@
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:scratcher/scratcher.dart';
 import 'package:yedikule/game.dart';
 
 // https://drive.google.com/drive/folders/1nv3ii5-rFgfLVdgegULyPAxgUDag1Xsr?usp=share_link
 class ScratcherGame extends StatefulWidget {
-  final GameSettings settings;
+  final List<String> imagePaths;
   final Function onCompleted;
   const ScratcherGame(
-      {super.key, required this.onCompleted, required this.settings});
+      {super.key, required this.onCompleted, required this.imagePaths});
 
   @override
   State<ScratcherGame> createState() => _ScratcherGameState();
@@ -16,8 +16,6 @@ class ScratcherGame extends StatefulWidget {
 
 class _ScratcherGameState extends State<ScratcherGame>
     with SingleTickerProviderStateMixin {
-  AudioPlayer? player;
-
   @override
   void initState() {
     super.initState();
@@ -34,32 +32,47 @@ class _ScratcherGameState extends State<ScratcherGame>
           alignment: Alignment.center,
           child: Scratcher(
             brushSize: 30,
-            threshold: 90,
-            color: Colors.red,
-            onChange: (value) => print("Scratch progress: $value%"),
+            threshold: 60,
+            onChange: (value) => print(
+              "Scratch progress: $value%",
+            ),
             onThreshold: () async {
-              setState(() {
-                hasWon = true;
-/*              // Play without waiting for completion
-                AudioCache player = AudioCache();
-                const alarmAudioPath = "check.mp3";
-                player.load(alarmAudioPath); */
+              setState(
+                () {
+                  hasWon = true;
+                  Future.delayed(const Duration(seconds: 1)).then(
+                    (value) => setState(
+                      (() {
+                        isdoneVisible = true;
+                        final assetsAudioPlayer = AssetsAudioPlayer();
 
-                Future.delayed(Duration(seconds: 1))
-                    .then((value) => setState((() {
-                          isdoneVisible = true;
-                          var data = player!.setAsset('assets/mb3.mp3').then(
-                              (value) =>
-                                  player?.playerStateStream.listen((event) {}));
-                        })));
-                Future.delayed(Duration(seconds: 2))
-                    .then((value) => setState(() {
-                          isdoneVisible = false;
-                        }));
-              });
+                        assetsAudioPlayer.open(
+                          Audio("lib/assets/check.mp3"),
+                          volume: 1,
+                        );
+                        assetsAudioPlayer.play();
+                      }),
+                    ),
+                  );
+                  Future.delayed(const Duration(seconds: 2)).then(
+                    (value) => setState(
+                      () {
+                        isdoneVisible = false;
+                      },
+                    ),
+                  );
+                },
+              );
             },
-            image: Image.asset(widget.settings.imagePaths.last),
-            child: Image.asset(widget.settings.imagePaths.first),
+            image: Image.asset(
+              widget.imagePaths.last,
+              width: MediaQuery.of(context).size.width,
+            ),
+            child: Image.asset(
+              widget.imagePaths.first,
+              width: MediaQuery.of(context).size.width,
+              fit: BoxFit.fitWidth,
+            ),
           ),
         ),
         Visibility(
@@ -85,10 +98,17 @@ class _ScratcherGameState extends State<ScratcherGame>
                   onPressed: () {
                     widget.onCompleted();
                   },
-                  child: const Text(
-                    "Go back to map and explore other towers!",
+                  style: ButtonStyle(
+                    foregroundColor: MaterialStateProperty.all(Colors.black),
+                    backgroundColor: MaterialStateProperty.all(Colors.white),
                   ),
-                )
+                  child: const Text(
+                    "Continue",
+                    style: TextStyle(
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
             ],
           ),
         )

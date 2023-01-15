@@ -13,12 +13,12 @@ class QuestionAnswer {
 }
 
 class QuestionAnswerWidget extends StatefulWidget {
-  final List<QuestionAnswer> questions;
+  final QuestionAnswer question;
   final Function onCorrectAnswer;
   const QuestionAnswerWidget({
     super.key,
     required this.onCorrectAnswer,
-    required this.questions,
+    required this.question,
   });
 
   @override
@@ -28,12 +28,18 @@ class QuestionAnswerWidget extends StatefulWidget {
 class _QuestionAnswerWidgetState extends State<QuestionAnswerWidget> {
   bool? isCorrectAnswerFound;
   int questionIdx = 0;
+  int? selectedIdx;
+  @override
+  void didUpdateWidget(covariant QuestionAnswerWidget oldWidget) {
+    selectedIdx = null;
+    super.didUpdateWidget(oldWidget);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        color: Colors.amberAccent,
+        color: Colors.lime,
         width: MediaQuery.of(context).size.width,
         height: MediaQuery.of(context).size.height,
         child: Column(
@@ -41,36 +47,50 @@ class _QuestionAnswerWidgetState extends State<QuestionAnswerWidget> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
                 Container(
-                  padding: EdgeInsets.only(bottom: 15),
-                  child: Card(
-                    child: Container(
-                      padding: EdgeInsets.all(5),
-                      child: Text(widget.questions[questionIdx].question),
+                  padding: const EdgeInsets.only(bottom: 15),
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    child: Card(
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        child: Text(
+                          widget.question.question,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 )
               ] +
-              widget.questions[questionIdx].options
+              widget.question.options
                   .mapIndexed(
                     (idx, option) => Container(
                       child: Card(
-                        color: (widget.questions[questionIdx].answerIdx == idx && isCorrectAnswerFound == true) ? Colors.green : (isCorrectAnswerFound == false ? Colors.red : Colors.white),
-                        child: Padding(
-                          padding: EdgeInsets.all(5),
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                if (widget.questions[questionIdx].answerIdx == idx) {
-                                  if ((questionIdx + 1) == widget.questions.length) {
-                                    isCorrectAnswerFound = true;
-                                  } else {
-                                    questionIdx += 1;
-                                  }
-                                }
-                              });
-                            },
+                        color: (widget.question.answerIdx == idx &&
+                                isCorrectAnswerFound == true)
+                            ? Colors.green
+                            : (isCorrectAnswerFound == false &&
+                                    selectedIdx == idx
+                                ? Colors.red
+                                : Colors.white),
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              selectedIdx = idx;
+                              isCorrectAnswerFound =
+                                  widget.question.answerIdx == idx;
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(10),
                             child: Text(
                               option,
+                              style: const TextStyle(
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                         ),
@@ -81,18 +101,26 @@ class _QuestionAnswerWidgetState extends State<QuestionAnswerWidget> {
               [
                 if (isCorrectAnswerFound == true)
                   Container(
-                      width: MediaQuery.of(context).size.width,
-                      padding: EdgeInsets.all(20),
-                      child: ElevatedButton(
-                        style: ButtonStyle(
-                          foregroundColor: MaterialStateProperty.all(Colors.black),
-                          backgroundColor: MaterialStateProperty.all(Colors.white),
+                    width: MediaQuery.of(context).size.width,
+                    padding: const EdgeInsets.all(20),
+                    child: ElevatedButton(
+                      style: ButtonStyle(
+                        foregroundColor:
+                            MaterialStateProperty.all(Colors.black),
+                        backgroundColor:
+                            MaterialStateProperty.all(Colors.white),
+                      ),
+                      child: const Text(
+                        "Next",
+                        style: TextStyle(
+                          fontSize: 18,
                         ),
-                        child: const Text("Next"),
-                        onPressed: () {
-                          widget.onCorrectAnswer();
-                        },
-                      ))
+                      ),
+                      onPressed: () {
+                        widget.onCorrectAnswer();
+                      },
+                    ),
+                  )
               ],
         ),
       ),
